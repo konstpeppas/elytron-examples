@@ -20,6 +20,7 @@ package org.wildfly.security.examples;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.Principal;
+import java.util.ArrayList;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.HttpMethodConstraint;
@@ -27,6 +28,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.wildfly.security.http.oidc.OidcAccount;
 
 /**
  * A simple secured HTTP servlet.
@@ -38,6 +40,12 @@ public class SecuredServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        ArrayList<String> roles = new ArrayList<>(5);
+        if (req.getSession().getAttribute(OidcAccount.class.getName()) != null) {
+            OidcAccount acc = (OidcAccount) req.getSession().getAttribute(OidcAccount.class.getName());
+            roles = acc.getOidcSecurityContext().getToken().getRealmAccessClaim().getRoles();
+        }
+
         try (PrintWriter writer = resp.getWriter()) {
             writer.println("<html>");
             writer.println("  <head><title>Secured Servlet</title></head>");
@@ -47,6 +55,11 @@ public class SecuredServlet extends HttpServlet {
             writer.print(" Current Principal '");
             Principal user = req.getUserPrincipal();
             writer.print(user != null ? user.getName() : "NO AUTHENTICATED USER");
+            writer.print("'");
+            writer.println("    </p>");
+            writer.println("    <p>");
+            writer.print(" Current Roles '");
+            writer.print(user != null ? roles : "NO AUTHENTICATED USER");
             writer.print("'");
             writer.println("    </p>");
             writer.println("  </body>");
